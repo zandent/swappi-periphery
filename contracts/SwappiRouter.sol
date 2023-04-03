@@ -9,7 +9,7 @@ import './libraries/SafeMath.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IWETH.sol';
 
-contract SwappiRouter is ISwappiRouter02 {
+contract SwappiRouterStable is ISwappiRouter02 {
     using SafeMath for uint;
 
     address public immutable override factory;

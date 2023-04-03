@@ -38,24 +38,84 @@ library SwappiLibrary {
         require(reserveA > 0 && reserveB > 0, 'SwappiLibrary: INSUFFICIENT_LIQUIDITY');
         amountB = amountA.mul(reserveB) / reserveA;
     }
+    function _f(uint x0, uint y) internal pure returns (uint) {
+        return x0*(y*y/1e18*y/1e18)/1e18+(x0*x0/1e18*x0/1e18)*y/1e18;
+    }
 
+    function _d(uint x0, uint y) internal pure returns (uint) {
+        return 3*x0*(y*y/1e18)/1e18+(x0*x0/1e18*x0/1e18);
+    }
+
+    function _get_y(uint x0, uint xy, uint y) internal pure returns (uint) {
+        for (uint i = 0; i < 255; i++) {
+            uint y_prev = y;
+            uint k = _f(x0, y);
+            if (k < xy) {
+                uint dy = (xy - k)*1e18/_d(x0, y);
+                y = y + dy;
+            } else {
+                uint dy = (k - xy)*1e18/_d(x0, y);
+                y = y - dy;
+            }
+            if (y > y_prev) {
+                if (y - y_prev <= 1) {
+                    return y;
+                }
+            } else {
+                if (y_prev - y <= 1) {
+                    return y;
+                }
+            }
+        }
+        return y;
+    }
+    function _k(uint x, uint y) internal pure returns (uint) {
+        uint decimals0 = 1e18;
+        uint decimals1 = 1e18;
+        uint _x = x * 1e18 / decimals0;
+        uint _y = y * 1e18 / decimals1;
+        uint _a = (_x * _y) / 1e18;
+        uint _b = ((_x * _x) / 1e18 + (_y * _y) / 1e18);
+        return _a * _b / 1e18;  // x3y+y3x >= k
+    }
+    function _getAmountOut(uint amountIn, uint _reserve0, uint _reserve1) internal pure returns (uint) {
+        uint decimals0 = 1e18;
+        uint decimals1 = 1e18;
+        uint xy =  _k(_reserve0, _reserve1);
+        _reserve0 = _reserve0 * 1e18 / decimals0;
+        _reserve1 = _reserve1 * 1e18 / decimals1;
+        amountIn = amountIn * 1e18 / decimals0;
+        uint y = _reserve1 - _get_y(amountIn+_reserve0, xy, _reserve1);
+        return y * decimals1 / 1e18;
+    }
+    function _getAmountIn(uint amountOut, uint _reserve0, uint _reserve1) internal pure returns (uint) {
+        uint decimals0 = 1e18;
+        uint decimals1 = 1e18;
+        uint xy =  _k(_reserve0, _reserve1);
+        _reserve0 = _reserve0 * 1e18 / decimals0;
+        _reserve1 = _reserve1 * 1e18 / decimals1;
+        amountOut = amountOut * 1e18 / decimals0;
+        uint y = _get_y(_reserve1.sub(amountOut), xy, _reserve0) - _reserve0;
+        return y * decimals1 / 1e18;
+    }
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
     function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
         require(amountIn > 0, 'SwappiLibrary: INSUFFICIENT_INPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'SwappiLibrary: INSUFFICIENT_LIQUIDITY');
-        uint amountInWithFee = amountIn.mul(9975);
-        uint numerator = amountInWithFee.mul(reserveOut);
-        uint denominator = reserveIn.mul(10000).add(amountInWithFee);
-        amountOut = numerator / denominator;
+        (uint _reserve0, uint _reserve1) = (reserveIn, reserveOut);
+        uint amountInWithFee = amountIn.mul(9997);
+        return _getAmountOut(amountInWithFee, _reserve0, _reserve1);
     }
 
     // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
     function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn) {
         require(amountOut > 0, 'SwappiLibrary: INSUFFICIENT_OUTPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'SwappiLibrary: INSUFFICIENT_LIQUIDITY');
-        uint numerator = reserveIn.mul(amountOut).mul(10000);
-        uint denominator = reserveOut.sub(amountOut).mul(9975);
-        amountIn = (numerator / denominator).add(1);
+        // uint numerator = reserveIn.mul(amountOut).mul(10000);
+        // uint denominator = reserveOut.sub(amountOut).mul(9997);
+        // amountIn = (numerator / denominator).add(1);
+        (uint _reserve0, uint _reserve1) = (reserveIn, reserveOut);
+        return _getAmountIn(amountOut, _reserve0, _reserve1).mul(10000)/9997;
     }
 
     // performs chained getAmountOut calculations on any number of pairs
