@@ -3,10 +3,27 @@ pragma solidity >=0.6.2;
 interface ISwappiRouter01 {
     function factory() external pure returns (address);
     function WETH() external pure returns (address);
+    struct addLiquidityParam {
+        address tokenA;
+        address tokenB;
+        uint256[2] normalizedWeights;
+        uint amountADesired;
+        uint amountBDesired;
+        uint amountAMin;
+        uint amountBMin;
+        address to;    
+    }
+    struct rmLiquidityParam {
+        address tokenA;
+        address tokenB;
+        uint liquidity;
+        address to;    
+    }
 
     function addLiquidity(
         address tokenA,
         address tokenB,
+        uint256[2] calldata normalizedWeights,
         uint amountADesired,
         uint amountBDesired,
         uint amountAMin,
@@ -16,6 +33,7 @@ interface ISwappiRouter01 {
     ) external returns (uint amountA, uint amountB, uint liquidity);
     function addLiquidityETH(
         address token,
+        uint256[2] calldata normalizedWeights,
         uint amountTokenDesired,
         uint amountTokenMin,
         uint amountETHMin,
@@ -87,9 +105,9 @@ interface ISwappiRouter01 {
         payable
         returns (uint[] memory amounts);
 
-    function quote(uint amountA, uint reserveA, uint reserveB) external pure returns (uint amountB);
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) external pure returns (uint amountOut);
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) external pure returns (uint amountIn);
+    function quote(uint amountA, uint reserveA, uint reserveB, uint256[2] calldata normalizedWeights) external view returns (uint amountB);
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, address tokenIn, address tokenOut) external view returns (uint amountOut);
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, address tokenIn, address tokenOut) external view returns (uint amountIn);
     function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
     function getAmountsIn(uint amountOut, address[] calldata path) external view returns (uint[] memory amounts);
 }
