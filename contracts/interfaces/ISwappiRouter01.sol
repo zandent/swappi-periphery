@@ -17,6 +17,8 @@ interface ISwappiRouter01 {
         address tokenA;
         address tokenB;
         uint liquidity;
+        uint amountAMin;
+        uint amountBMin;
         address to;    
     }
 

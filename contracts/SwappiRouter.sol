@@ -138,7 +138,9 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
         address pair = SwappiLibrary.pairFor(factory, params.tokenA, params.tokenB);
         (uint reserveA, uint reserveB) = SwappiLibrary.getReserves(factory, params.tokenA, params.tokenB);
         // (reserveA, reserveB) = tokenA < tokenB ? (reserveA, reserveB) : (reserveB, reserveA);
-        (uint amount0, uint amount1) = ISwappiPair(pair).onExitPool(params.to, [reserveA, reserveB], params.liquidity, 2); //2 means return proptional tokens        
+        (amountA, amountB) = ISwappiPair(pair).onExitPool(params.to, [reserveA, reserveB], params.liquidity, 2); //2 means return proptional tokens        
+        require(amountA >= params.amountAMin, 'SwappiRouter: INSUFFICIENT_A_AMOUNT');
+        require(amountB >= params.amountBMin, 'SwappiRouter: INSUFFICIENT_B_AMOUNT');
     }
     // **** REMOVE LIQUIDITY ****
     //remove liquidity and return proptional tokens
@@ -155,6 +157,8 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
             tokenA: tokenA,
             tokenB: tokenB,
             liquidity: liquidity,
+            amountAMin: amountAMin,
+            amountBMin: amountBMin,
             to: to
         });
         (amountA, amountB) = _removeLiquidity(params);
@@ -184,6 +188,8 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
             tokenA: token,
             tokenB: WETH,
             liquidity: liquidity,
+            amountAMin: amountTokenMin,
+            amountBMin: amountETHMin,
             to: to
             });
         }else{
@@ -191,6 +197,8 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
             tokenA: WETH,
             tokenB: token,
             liquidity: liquidity,
+            amountAMin: amountETHMin,
+            amountBMin: amountTokenMin,
             to: to
             });
         }
@@ -275,9 +283,9 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
     function _swap(uint[] memory amounts, address[] memory path, address _to) internal virtual {
         for (uint i; i < path.length - 1; i++) {
             (address input, address output) = (path[i], path[i + 1]);
-            (address token0,) = SwappiLibrary.sortTokens(input, output);
+            // (address token0,) = SwappiLibrary.sortTokens(input, output);
             uint amountOut = amounts[i + 1];
-            (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
+            // (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOut) : (amountOut, uint(0));
             (uint reserveA, uint reserveB) = SwappiLibrary.getReserves(factory, input, output);
             address to = i < path.length - 2 ? SwappiLibrary.pairFor(factory, output, path[i + 2]) : _to;
             amountOut = ISwappiPair(SwappiLibrary.pairFor(factory, input, output)).onSwap(
