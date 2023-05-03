@@ -43,15 +43,16 @@ interface ISwappiPair {
     function kLast() external view returns (uint);
     // ###################V2 mint is deleted####################
     // function mint(address to) external returns (uint liquidity);
+    function vault() external view returns (address);
     function onJoinPool(
         address recipient,
-        uint256[2] calldata balances,
-        uint256[2] calldata userAmountsIn,
+        uint256[] calldata balances,
+        uint256[] calldata userAmountsIn,
         uint256 bptMinOrExact
     ) external returns (uint256[] memory, uint256);
     function onExitPool(
         address sender,
-        uint256[2] calldata balances,
+        uint256[] calldata balances,
         uint256 bptAmountInExact,
         uint256 tokenIndex
     ) external returns (uint256, uint256);

@@ -53,7 +53,9 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
                 (amountA, amountB) = (amountAOptimal, params.amountBDesired);
             }
         }
-        (, liquidity) = ISwappiPair(pair).onJoinPool(params.to, [reserveA, reserveB], [amountA, amountB], 0);
+        uint[] memory reserves = new uint[] (2); reserves[0] = reserveA; reserves[1] = reserveB;
+        uint[] memory amounts = new uint[] (2); amounts[0] = amountA; amounts[1] = amountB;
+        (, liquidity) = ISwappiPair(pair).onJoinPool(params.to, reserves, amounts, 0);
     }
     function addLiquidity(
         address tokenA,
@@ -138,7 +140,8 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
         address pair = SwappiLibrary.pairFor(factory, params.tokenA, params.tokenB);
         (uint reserveA, uint reserveB) = SwappiLibrary.getReserves(factory, params.tokenA, params.tokenB);
         // (reserveA, reserveB) = tokenA < tokenB ? (reserveA, reserveB) : (reserveB, reserveA);
-        (amountA, amountB) = ISwappiPair(pair).onExitPool(params.to, [reserveA, reserveB], params.liquidity, 2); //2 means return proptional tokens        
+        uint[] memory reserves = new uint[] (2); reserves[0] = reserveA; reserves[1] = reserveB;
+        (amountA, amountB) = ISwappiPair(pair).onExitPool(params.to, reserves, params.liquidity, 2); //2 means return proptional tokens        
         require(amountA >= params.amountAMin, 'SwappiRouter: INSUFFICIENT_A_AMOUNT');
         require(amountB >= params.amountBMin, 'SwappiRouter: INSUFFICIENT_B_AMOUNT');
     }
@@ -169,8 +172,8 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
         // ISwappiPair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair // no need to transfer to pair. Pair will burn for user directly
         // (address token0,) = SwappiLibrary.sortTokens(tokenA, tokenB);
         // (amountA, amountB) = tokenA < tokenB ? (amountA, amountB) : (amountB, amountA);
-        require(amountA >= amountAMin, 'SwappiRouter: INSUFFICIENT_A_AMOUNT');
-        require(amountB >= amountBMin, 'SwappiRouter: INSUFFICIENT_B_AMOUNT');
+        // require(amountA >= amountAMin, 'SwappiRouter: INSUFFICIENT_A_AMOUNT');
+        // require(amountB >= amountBMin, 'SwappiRouter: INSUFFICIENT_B_AMOUNT');
         TransferHelper.safeTransfer(tokenA, to, amountA);
         TransferHelper.safeTransfer(tokenB, to, amountB);
     }
@@ -192,6 +195,7 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
             amountBMin: amountETHMin,
             to: to
             });
+            (amountToken, amountETH) = _removeLiquidity(params);
         }else{
             params = rmLiquidityParam({
             tokenA: WETH,
@@ -201,10 +205,9 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
             amountBMin: amountTokenMin,
             to: to
             });
+            (amountETH, amountToken) = _removeLiquidity(params);
         }
-        (amountToken, amountETH) = _removeLiquidity(
-            params
-        );
+        
         TransferHelper.safeTransfer(token, to, amountToken);
         IWETH(WETH).withdraw(amountETH);
         TransferHelper.safeTransferETH(to, amountETH);
@@ -289,7 +292,7 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
             (uint reserveA, uint reserveB) = SwappiLibrary.getReserves(factory, input, output);
             address to = i < path.length - 2 ? SwappiLibrary.pairFor(factory, output, path[i + 2]) : _to;
             amountOut = ISwappiPair(SwappiLibrary.pairFor(factory, input, output)).onSwap(
-                true, input, output, amountOut, reserveA, reserveB, to
+                false, input, output, amountOut, reserveA, reserveB, to
             );
         }
 

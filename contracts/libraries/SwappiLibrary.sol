@@ -21,7 +21,7 @@ library SwappiLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'f8fb03b41506dcfde2d9f61a6b5cbb72395e938c253a7f26eb1fcb093bd1709e' // init code hash
+                hex'd62641fc9a411381258c6bd6427a7516ecf73524f1a748a40103131d8bf7e309' // init code hash
             ))));
     }
 
@@ -48,7 +48,7 @@ library SwappiLibrary {
         );
     }
     function _getAmountIn(uint amountOut, uint _reserve0, uint _reserve1, address tokenIn, address tokenOut, address pool) internal view returns (uint) {
-        return ISwappiPair(pool).onSwapGivenIn(
+        return ISwappiPair(pool).onSwapGivenOut(
             tokenIn,
             tokenOut,
             amountOut,
