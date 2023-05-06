@@ -15,3 +15,74 @@ The following assumes the use of `node@>=10`.
 ## Run Tests
 
 `yarn test`
+
+## Function description
+### Add liquidity for two tokens
+```solidity
+function addLiquidity(
+        address tokenA, 
+        address tokenB,
+        uint256[2] calldata normalizedWeights,
+        uint amountADesired,
+        uint amountBDesired,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline
+    ) external virtual override ensure(deadline) returns (uint amountA, uint amountB, uint liquidity)
+```
+tokenA: token address
+
+tokenB: token address. Note that tokenA must be less than tokenB
+
+normalizedWeights: if the pair doesn't exist, the function will create the pair with the weight parameters. E.g [4e17, 6e17] means the ratio of tokenA and tokenB is 4:6. If the pair exists, the parameter is useless. It can be set at any value.
+
+amountADesired, amountBDesired, amountAMin, amountBMin, to, deadline: All parameters are the same as Swappi V1.
+
+### Add liquidity for CFX and the other token
+```solidity
+function addLiquidityETH(
+        address token,
+        uint256[2] calldata normalizedWeights,
+        uint amountTokenDesired,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline
+    ) external virtual override payable ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity)
+```
+normalizedWeights: normalizedWeights[0] is the weight of the smaller address.  normalizedWeights[1] is for the bigger one. I.e.
+```python
+if WCFX address < token:
+    normalizedWeights[0] = weight of WCFX
+    normalizedWeights[1] = weight of token
+else:
+    normalizedWeights[0] = weight of token
+    normalizedWeights[1] = weight of WCFX
+```
+
+### Remove liquidity for two tokens
+```solidity
+function removeLiquidity(
+        address tokenA,
+        address tokenB,
+        uint liquidity,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline
+    ) public virtual override ensure(deadline) returns (uint amountA, uint amountB)
+```
+Same as Swappi V1. Note that tokenA must be less than tokenB
+
+### Remove liquidity for CFX and the other token
+```solidity
+function removeLiquidityETH(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline
+    ) public virtual override ensure(deadline) returns (uint amountToken, uint amountETH)
+```
