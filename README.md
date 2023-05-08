@@ -25,8 +25,7 @@ function addLiquidity(
         uint256[2] calldata normalizedWeights,
         uint amountADesired,
         uint amountBDesired,
-        uint amountAMin,
-        uint amountBMin,
+        uint lquidityMin,
         address to,
         uint deadline
     ) external virtual override ensure(deadline) returns (uint amountA, uint amountB, uint liquidity)
@@ -45,8 +44,7 @@ function addLiquidityETH(
         address token,
         uint256[2] calldata normalizedWeights,
         uint amountTokenDesired,
-        uint amountTokenMin,
-        uint amountETHMin,
+        uint lquidityMin,
         address to,
         uint deadline
     ) external virtual override payable ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity)

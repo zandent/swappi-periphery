@@ -59,8 +59,8 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
         (actualAmountIn, liquidity) = ISwappiPair(pair).onJoinPool(params.to, reserves, amounts, 0);
         amountA = actualAmountIn[0];
         amountB = actualAmountIn[1];
-        require(amountA >= params.amountAMin, 'SwappiRouter: INSUFFICIENT_A_AMOUNT');
-        require(amountB >= params.amountBMin, 'SwappiRouter: INSUFFICIENT_B_AMOUNT');
+        // require(amountA >= params.amountAMin, 'SwappiRouter: INSUFFICIENT_A_AMOUNT');
+        // require(amountB >= params.amountBMin, 'SwappiRouter: INSUFFICIENT_B_AMOUNT');
     }
     function _addLiquidityForOneToken(
         addLiquidityParamForOneToken memory params
@@ -159,8 +159,7 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
         uint256[2] calldata normalizedWeights,
         uint amountADesired,
         uint amountBDesired,
-        uint amountAMin,
-        uint amountBMin,
+        uint lquidityMin,
         address to,
         uint deadline
     ) external virtual override ensure(deadline) returns (uint amountA, uint amountB, uint liquidity) {
@@ -170,12 +169,11 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
          normalizedWeights: normalizedWeights,
          amountADesired: amountADesired,
          amountBDesired: amountBDesired,
-         amountAMin: amountAMin,
-         amountBMin: amountBMin,
          to: to
         });
         address pair;
         (amountA, amountB, liquidity, pair) = _addLiquidity(params);
+        require(liquidity >= lquidityMin, 'SwappiRouter: Slippage check');
         // address pair = SwappiLibrary.pairFor(factory, tokenA, tokenB);
         // (uint reserveA, uint reserveB) = SwappiLibrary.getReserves(factory, tokenA, tokenB);
         // (, liquidity) = ISwappiPair(pair).onJoinPool(to, [reserveA, reserveB], [amountA, amountB], 0);
@@ -186,8 +184,7 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
         address token,
         uint256[2] calldata normalizedWeights,
         uint amountTokenDesired,
-        uint amountTokenMin,
-        uint amountETHMin,
+        uint lquidityMin,
         address to,
         uint deadline
     ) external virtual override payable ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity) {
@@ -200,8 +197,6 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
             normalizedWeights: normalizedWeights,
             amountADesired: amountTokenDesired,
             amountBDesired: msg.value,
-            amountAMin: amountTokenMin,
-            amountBMin: amountETHMin,
             to: to
             });
             (amountToken, amountETH, liquidity, pair) = _addLiquidity(
@@ -214,14 +209,13 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
             normalizedWeights: normalizedWeights,
             amountADesired: msg.value,
             amountBDesired: amountTokenDesired,
-            amountAMin: amountETHMin,
-            amountBMin: amountTokenMin,
             to: to
             });
             (amountETH, amountToken, liquidity, pair) = _addLiquidity(
             params
             );
         }
+        require(liquidity >= lquidityMin, 'SwappiRouter: Slippage check');
         // address pair = SwappiLibrary.pairFor(factory, token, WETH);
         // (uint reserveA, uint reserveB) = SwappiLibrary.getReserves(factory, token, WETH);
         // (reserveA, reserveB) = token < WETH ? (reserveA, reserveB) : (reserveB, reserveA);

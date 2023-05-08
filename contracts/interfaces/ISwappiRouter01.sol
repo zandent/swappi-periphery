@@ -9,8 +9,6 @@ interface ISwappiRouter01 {
         uint256[2] normalizedWeights;
         uint amountADesired;
         uint amountBDesired;
-        uint amountAMin;
-        uint amountBMin;
         address to;    
     }
     struct addLiquidityParamForOneToken {
@@ -37,8 +35,7 @@ interface ISwappiRouter01 {
         uint256[2] calldata normalizedWeights,
         uint amountADesired,
         uint amountBDesired,
-        uint amountAMin,
-        uint amountBMin,
+        uint lquidityMin,
         address to,
         uint deadline
     ) external returns (uint amountA, uint amountB, uint liquidity);
@@ -46,8 +43,7 @@ interface ISwappiRouter01 {
         address token,
         uint256[2] calldata normalizedWeights,
         uint amountTokenDesired,
-        uint amountTokenMin,
-        uint amountETHMin,
+        uint lquidityMin,
         address to,
         uint deadline
     ) external payable returns (uint amountToken, uint amountETH, uint liquidity);
