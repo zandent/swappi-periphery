@@ -13,6 +13,15 @@ interface ISwappiRouter01 {
         uint amountBMin;
         address to;    
     }
+    struct addLiquidityParamForOneToken {
+        address tokenA;
+        address tokenB;
+        uint liquidity;
+        uint tokenIndex;
+        uint amountAMin;
+        uint amountBMin;
+        address to;    
+    }
     struct rmLiquidityParam {
         address tokenA;
         address tokenB;

@@ -60,7 +60,32 @@ else:
     normalizedWeights[0] = weight of token
     normalizedWeights[1] = weight of WCFX
 ```
+### Add liquidity with single token
+```solidity
+function addLiquidityForOneToken(
+        address tokenA,
+        address tokenB,
+        uint liquidityDesired,
+        uint tokenIndex,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline
+    ) external ensure(deadline) returns (uint amountA, uint amountB, uint liquidity)
 
+function addLiquidityETHForOneToken(
+        address token,
+        uint liquidityDesired,
+        uint tokenIndex,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline
+    ) external payable ensure(deadline) returns (uint amountToken, uint amountETH, uint liquidity)
+```
+tokenIndex: 0 means to add liquidity for the token with smaller address. 1 means the larger address.
+liquidityDesired: the liquidity to be needed
+Note that tokenA must be less than tokenB.
 ### Remove liquidity for two tokens
 ```solidity
 function removeLiquidity(
@@ -86,3 +111,30 @@ function removeLiquidityETH(
         uint deadline
     ) public virtual override ensure(deadline) returns (uint amountToken, uint amountETH)
 ```
+
+### Remove liquidity with single token
+```solidity
+function removeLiquidityForOneToken(
+        address tokenA,
+        address tokenB,
+        uint liquidity,
+        uint amountAMin,
+        uint amountBMin,
+        address to,
+        uint deadline,
+        uint tokenIndex
+    ) public ensure(deadline) returns (uint amountA, uint amountB)
+
+function removeLiquidityETHForOneToken(
+        address token,
+        uint liquidity,
+        uint amountTokenMin,
+        uint amountETHMin,
+        address to,
+        uint deadline,
+        uint tokenIndex
+    ) public ensure(deadline) returns (uint amountToken, uint amountETH)
+```
+tokenIndex: 0 means to get back the token with smaller address. 1 means the larger address.
+liquidity: the liquidity to be burned
+Note that tokenA must be less than tokenB.
