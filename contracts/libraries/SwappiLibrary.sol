@@ -69,6 +69,29 @@ library SwappiLibrary {
         }
         return y;
     }
+    function _get_y_amountIn(uint x0, uint xy, uint y) internal pure returns (uint) {
+        for (uint i = 0; i < 255; i++) {
+            uint y_prev = y;
+            uint k = _f(x0, y);
+            if (k < xy) {
+                uint dy = divUp((xy - k)*1e18, _d(x0, y));
+                y = y + dy;
+            } else {
+                uint dy = (k - xy)*1e18/_d(x0, y);
+                y = y - dy;
+            }
+            if (y > y_prev) {
+                if (y - y_prev <= 1) {
+                    return y;
+                }
+            } else {
+                if (y_prev - y <= 1) {
+                    return y;
+                }
+            }
+        }
+        return y;
+    }
     function _k(uint x, uint y) internal pure returns (uint) {
         uint decimals0 = 1e18;
         uint decimals1 = 1e18;
@@ -88,6 +111,15 @@ library SwappiLibrary {
         uint y = _reserve1 - _get_y(amountIn+_reserve0, xy, _reserve1);
         return y * decimals1 / 1e18;
     }
+    function divUp(uint256 a, uint256 b) internal pure returns (uint256 result) {
+        require(b != 0, "Errors.ZERO_DIVISION");
+
+        // Equivalent to:
+        // result = a == 0 ? 0 : 1 + (a - 1) / b;
+        assembly {
+            result := mul(iszero(iszero(a)), add(1, div(sub(a, 1), b)))
+        }
+    }
     function _getAmountIn(uint amountOut, uint _reserve0, uint _reserve1) internal pure returns (uint) {
         uint decimals0 = 1e18;
         uint decimals1 = 1e18;
@@ -95,7 +127,7 @@ library SwappiLibrary {
         _reserve0 = _reserve0 * 1e18 / decimals0;
         _reserve1 = _reserve1 * 1e18 / decimals1;
         amountOut = amountOut * 1e18 / decimals0;
-        uint y = _get_y(_reserve1.sub(amountOut), xy, _reserve0) - _reserve0;
+        uint y = _get_y_amountIn(_reserve1- amountOut, xy, _reserve0) - _reserve0;
         return y * decimals1 / 1e18;
     }
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
@@ -103,7 +135,7 @@ library SwappiLibrary {
         require(amountIn > 0, 'SwappiLibrary: INSUFFICIENT_INPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'SwappiLibrary: INSUFFICIENT_LIQUIDITY');
         (uint _reserve0, uint _reserve1) = (reserveIn, reserveOut);
-        uint amountInWithFee = amountIn.mul(9997);
+        uint amountInWithFee = amountIn.mul(9997)/10000;
         return _getAmountOut(amountInWithFee, _reserve0, _reserve1);
     }
 
@@ -115,7 +147,7 @@ library SwappiLibrary {
         // uint denominator = reserveOut.sub(amountOut).mul(9997);
         // amountIn = (numerator / denominator).add(1);
         (uint _reserve0, uint _reserve1) = (reserveIn, reserveOut);
-        return _getAmountIn(amountOut, _reserve0, _reserve1).mul(10000)/9997;
+        return divUp(_getAmountIn(amountOut, _reserve0, _reserve1).mul(10000), 9997);
     }
 
     // performs chained getAmountOut calculations on any number of pairs
