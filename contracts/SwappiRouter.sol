@@ -8,8 +8,8 @@ import './libraries/SwappiLibrary.sol';
 import './libraries/SafeMath.sol';
 import './interfaces/IERC20.sol';
 import './interfaces/IWETH.sol';
-
-contract SwappiRouterWeighted is ISwappiRouter01 {
+import "./roles/Ownable.sol";
+contract SwappiRouterWeighted is ISwappiRouter01, Ownable {
     using SafeMath for uint;
 
     address public immutable override factory;
@@ -27,6 +27,16 @@ contract SwappiRouterWeighted is ISwappiRouter01 {
 
     receive() external payable {
         assert(msg.sender == WETH); // only accept ETH via fallback from the WETH contract
+    }
+
+    function setNormalizedWeightsOrCreatePair(address tokenA, address tokenB, uint256[2] calldata _normalizedWeights) external onlyOwner {
+        if (ISwappiFactory(factory).getPair(tokenA, tokenB) == address(0)) {
+            ISwappiFactory(factory).createPair(tokenA, tokenB, _normalizedWeights);
+        }else{
+            address pair = ISwappiFactory(factory).getPair(tokenA, tokenB);
+            uint256[] memory normalizedWeights = new uint[] (2); normalizedWeights[0] = _normalizedWeights[0]; normalizedWeights[1] = _normalizedWeights[1];
+            ISwappiPair(pair).setNormalizedWeights(normalizedWeights);
+        }
     }
 
     // **** ADD LIQUIDITY ****

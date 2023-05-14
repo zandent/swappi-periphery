@@ -21,7 +21,7 @@ library SwappiLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'd62641fc9a411381258c6bd6427a7516ecf73524f1a748a40103131d8bf7e309' // init code hash
+                hex'ac4358241e8291868defbccc69605199fec092f8b2969d18e734de4e8da8b20b' // init code hash
             ))));
     }
 
@@ -62,7 +62,7 @@ library SwappiLibrary {
         require(reserveIn > 0 && reserveOut > 0, 'SwappiLibrary: INSUFFICIENT_LIQUIDITY');
         address pool = pairFor(factory, tokenIn, tokenOut);
         (uint _reserve0, uint _reserve1) = (reserveIn, reserveOut);
-        uint amountInWithFee = amountIn.mul(9997)/10000;
+        uint amountInWithFee = amountIn.mul(9975)/10000;
         return _getAmountOut(amountInWithFee, _reserve0, _reserve1, tokenIn, tokenOut, pool);
     }
 
@@ -72,7 +72,7 @@ library SwappiLibrary {
         require(reserveIn > 0 && reserveOut > 0, 'SwappiLibrary: INSUFFICIENT_LIQUIDITY');
         address pool = pairFor(factory, tokenIn, tokenOut);
         (uint _reserve0, uint _reserve1) = (reserveIn, reserveOut);
-        return _getAmountIn(amountOut, _reserve0, _reserve1, tokenIn, tokenOut, pool).mul(10000)/9997;
+        return _getAmountIn(amountOut, _reserve0, _reserve1, tokenIn, tokenOut, pool).mul(10000)/9975;
     }
 
     // performs chained getAmountOut calculations on any number of pairs
