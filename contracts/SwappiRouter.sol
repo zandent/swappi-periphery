@@ -267,7 +267,7 @@ contract SwappiRouterWeighted is ISwappiRouter01, Ownable {
             liquidity: liquidity,
             amountAMin: amountAMin,
             amountBMin: amountBMin,
-            to: to
+            to: msg.sender
         });
         (amountA, amountB) = _removeLiquidityForOneToken(params, tokenIndex);
         // address pair = SwappiLibrary.pairFor(factory, tokenA, tokenB);
@@ -299,7 +299,7 @@ contract SwappiRouterWeighted is ISwappiRouter01, Ownable {
             liquidity: liquidity,
             amountAMin: amountTokenMin,
             amountBMin: amountETHMin,
-            to: to
+            to: msg.sender
             });
             (amountToken, amountETH) = _removeLiquidityForOneToken(params, tokenIndex);
         }else{
@@ -309,7 +309,7 @@ contract SwappiRouterWeighted is ISwappiRouter01, Ownable {
             liquidity: liquidity,
             amountAMin: amountETHMin,
             amountBMin: amountTokenMin,
-            to: to
+            to: msg.sender
             });
             (amountETH, amountToken) = _removeLiquidityForOneToken(params, tokenIndex);
         }
@@ -346,7 +346,7 @@ contract SwappiRouterWeighted is ISwappiRouter01, Ownable {
             liquidity: liquidity,
             amountAMin: amountAMin,
             amountBMin: amountBMin,
-            to: to
+            to: msg.sender
         });
         (amountA, amountB) = _removeLiquidity(params);
         // address pair = SwappiLibrary.pairFor(factory, tokenA, tokenB);
@@ -377,7 +377,7 @@ contract SwappiRouterWeighted is ISwappiRouter01, Ownable {
             liquidity: liquidity,
             amountAMin: amountTokenMin,
             amountBMin: amountETHMin,
-            to: to
+            to: msg.sender
             });
             (amountToken, amountETH) = _removeLiquidity(params);
         }else{
@@ -387,7 +387,7 @@ contract SwappiRouterWeighted is ISwappiRouter01, Ownable {
             liquidity: liquidity,
             amountAMin: amountETHMin,
             amountBMin: amountTokenMin,
-            to: to
+            to: msg.sender
             });
             (amountETH, amountToken) = _removeLiquidity(params);
         }
