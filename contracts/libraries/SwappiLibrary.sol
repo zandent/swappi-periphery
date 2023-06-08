@@ -1,6 +1,7 @@
 pragma solidity >=0.5.0;
 
 import '../interfaces/ISwappiPair.sol';
+import '../interfaces/IERC20.sol';
 
 import "./SafeMath.sol";
 
@@ -21,7 +22,7 @@ library SwappiLibrary {
                 hex'ff',
                 factory,
                 keccak256(abi.encodePacked(token0, token1)),
-                hex'16961f899489181a6443469a187b711fce3854ab38a17beda8feaeb24479a4ed' // init code hash
+                hex'29175648b4d47db69c4f0b9cb0a84dc06e44408bfb4490c586901d9a645bfa92' // init code hash
             ))));
     }
 
@@ -92,19 +93,15 @@ library SwappiLibrary {
         }
         return y;
     }
-    function _k(uint x, uint y) internal pure returns (uint) {
-        uint decimals0 = 1e18;
-        uint decimals1 = 1e18;
+    function _k(uint x, uint y, uint decimals0, uint decimals1) internal pure returns (uint) {
         uint _x = x * 1e18 / decimals0;
         uint _y = y * 1e18 / decimals1;
         uint _a = (_x * _y) / 1e18;
         uint _b = ((_x * _x) / 1e18 + (_y * _y) / 1e18);
         return _a * _b / 1e18;  // x3y+y3x >= k
     }
-    function _getAmountOut(uint amountIn, uint _reserve0, uint _reserve1) internal pure returns (uint) {
-        uint decimals0 = 1e18;
-        uint decimals1 = 1e18;
-        uint xy =  _k(_reserve0, _reserve1);
+    function _getAmountOut(uint amountIn, uint _reserve0, uint _reserve1, uint decimals0, uint decimals1) internal pure returns (uint) {
+        uint xy =  _k(_reserve0, _reserve1, decimals0, decimals1);
         _reserve0 = _reserve0 * 1e18 / decimals0;
         _reserve1 = _reserve1 * 1e18 / decimals1;
         amountIn = amountIn * 1e18 / decimals0;
@@ -120,34 +117,34 @@ library SwappiLibrary {
             result := mul(iszero(iszero(a)), add(1, div(sub(a, 1), b)))
         }
     }
-    function _getAmountIn(uint amountOut, uint _reserve0, uint _reserve1) internal pure returns (uint) {
-        uint decimals0 = 1e18;
-        uint decimals1 = 1e18;
-        uint xy =  _k(_reserve0, _reserve1);
+    function _getAmountIn(uint amountOut, uint _reserve0, uint _reserve1, uint decimals0, uint decimals1) internal pure returns (uint) {
+        uint xy =  _k(_reserve0, _reserve1, decimals0, decimals1);
         _reserve0 = _reserve0 * 1e18 / decimals0;
         _reserve1 = _reserve1 * 1e18 / decimals1;
         amountOut = amountOut * 1e18 / decimals0;
         uint y = _get_y_amountIn(_reserve1- amountOut, xy, _reserve0) - _reserve0;
-        return y * decimals1 / 1e18;
+        return y * decimals0 / 1e18;
     }
     // given an input amount of an asset and pair reserves, returns the maximum output amount of the other asset
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) internal pure returns (uint amountOut) {
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint decimalsIn, uint decimalsOut) internal pure returns (uint amountOut) {
         require(amountIn > 0, 'SwappiLibrary: INSUFFICIENT_INPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'SwappiLibrary: INSUFFICIENT_LIQUIDITY');
         (uint _reserve0, uint _reserve1) = (reserveIn, reserveOut);
         uint amountInWithFee = amountIn.mul(9997)/10000;
-        return _getAmountOut(amountInWithFee, _reserve0, _reserve1);
+        amountInWithFee = amountInWithFee * 1e18 / decimalsIn;
+        return _getAmountOut(amountInWithFee, _reserve0, _reserve1, decimalsIn, decimalsOut);
     }
 
     // given an output amount of an asset and pair reserves, returns a required input amount of the other asset
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) internal pure returns (uint amountIn) {
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint decimalsIn, uint decimalsOut) internal pure returns (uint amountIn) {
         require(amountOut > 0, 'SwappiLibrary: INSUFFICIENT_OUTPUT_AMOUNT');
         require(reserveIn > 0 && reserveOut > 0, 'SwappiLibrary: INSUFFICIENT_LIQUIDITY');
         // uint numerator = reserveIn.mul(amountOut).mul(10000);
         // uint denominator = reserveOut.sub(amountOut).mul(9997);
         // amountIn = (numerator / denominator).add(1);
+        amountOut = amountOut * 1e18 / decimalsOut;
         (uint _reserve0, uint _reserve1) = (reserveIn, reserveOut);
-        return divUp(_getAmountIn(amountOut, _reserve0, _reserve1).mul(10000), 9997);
+        return divUp(_getAmountIn(amountOut, _reserve0, _reserve1, decimalsIn, decimalsOut).mul(10000), 9997);
     }
 
     // performs chained getAmountOut calculations on any number of pairs
@@ -157,7 +154,9 @@ library SwappiLibrary {
         amounts[0] = amountIn;
         for (uint i; i < path.length - 1; i++) {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i], path[i + 1]);
-            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut);
+            uint decimalsIn = 10**uint256(IERC20(path[i]).decimals());
+            uint decimalsOut = 10**uint256(IERC20(path[i+1]).decimals());
+            amounts[i + 1] = getAmountOut(amounts[i], reserveIn, reserveOut, decimalsIn, decimalsOut);
         }
     }
 
@@ -168,7 +167,9 @@ library SwappiLibrary {
         amounts[amounts.length - 1] = amountOut;
         for (uint i = path.length - 1; i > 0; i--) {
             (uint reserveIn, uint reserveOut) = getReserves(factory, path[i - 1], path[i]);
-            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut);
+            uint decimalsIn = 10**uint256(IERC20(path[i-1]).decimals());
+            uint decimalsOut = 10**uint256(IERC20(path[i]).decimals());
+            amounts[i - 1] = getAmountIn(amounts[i], reserveIn, reserveOut, decimalsIn, decimalsOut);
         }
     }
 }

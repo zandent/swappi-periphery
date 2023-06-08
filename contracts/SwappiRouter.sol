@@ -6,7 +6,7 @@ import './interfaces/ISwappiRouter02.sol';
 import './interfaces/ISwappiFactory.sol';
 import './libraries/SwappiLibrary.sol';
 import './libraries/SafeMath.sol';
-import './interfaces/IERC20.sol';
+// import './interfaces/IERC20.sol';
 import './interfaces/IWETH.sol';
 
 contract SwappiRouterStable is ISwappiRouter02 {
@@ -329,7 +329,9 @@ contract SwappiRouterStable is ISwappiRouter02 {
             (uint reserve0, uint reserve1,) = pair.getReserves();
             (uint reserveInput, uint reserveOutput) = input == token0 ? (reserve0, reserve1) : (reserve1, reserve0);
             amountInput = IERC20(input).balanceOf(address(pair)).sub(reserveInput);
-            amountOutput = SwappiLibrary.getAmountOut(amountInput, reserveInput, reserveOutput);
+            uint decimalsIn = IERC20(input).decimals();
+            uint decimalsOut = IERC20(output).decimals();
+            amountOutput = SwappiLibrary.getAmountOut(amountInput, reserveInput, reserveOutput, decimalsIn, decimalsOut);
             }
             (uint amount0Out, uint amount1Out) = input == token0 ? (uint(0), amountOutput) : (amountOutput, uint(0));
             address to = i < path.length - 2 ? SwappiLibrary.pairFor(factory, output, path[i + 2]) : _to;
@@ -404,24 +406,24 @@ contract SwappiRouterStable is ISwappiRouter02 {
         return SwappiLibrary.quote(amountA, reserveA, reserveB);
     }
 
-    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut)
+    function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut, uint decimalsIn, uint decimalsOut)
         public
         pure
         virtual
         override
         returns (uint amountOut)
     {
-        return SwappiLibrary.getAmountOut(amountIn, reserveIn, reserveOut);
+        return SwappiLibrary.getAmountOut(amountIn, reserveIn, reserveOut, decimalsIn, decimalsOut);
     }
 
-    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut)
+    function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut, uint decimalsIn, uint decimalsOut)
         public
         pure
         virtual
         override
         returns (uint amountIn)
     {
-        return SwappiLibrary.getAmountIn(amountOut, reserveIn, reserveOut);
+        return SwappiLibrary.getAmountIn(amountOut, reserveIn, reserveOut, decimalsIn, decimalsOut);
     }
 
     function getAmountsOut(uint amountIn, address[] memory path)
